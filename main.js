@@ -91,7 +91,8 @@ async function getPC(id) {
   stream.getTracks().forEach(track => {
     pc.addTrack(track, stream);
   });
-  pc.onconnectionstatechange= (...args)=>console.log("connection changed: ",...args);
+  pc.onconnectionstatechange = (...args) =>
+    console.log("connection changed: ", ...args);
   pc.onicecandidate = event => {
     if (event.candidate)
       sendMessage({ target: id, candidate: event.candidate });
@@ -102,10 +103,12 @@ async function getPC(id) {
     if (videos.includes(stream.id)) return;
     video = document.createElement("video");
     video.autoplay = true;
-    video.controls = true;
+    // video.controls = true;
+    video.classList.add("draggable");
     video.srcObject = stream;
     videos.push(stream.id);
     remoteVideos.appendChild(video);
+    draggables();
   };
   pcs[id] = pc;
   return pc;
@@ -117,3 +120,86 @@ function sendMessage(message) {
     message
   });
 }
+
+// interact('.resize-drag')
+//   .resizable({
+//     // resize from all edges and corners
+//     edges: { left: true, right: true, bottom: true, top: true },
+
+//     modifiers: [
+//       // keep the edges inside the parent
+//       interact.modifiers.restrictEdges({
+//         outer: 'parent'
+//       }),
+
+//       // minimum size
+//       interact.modifiers.restrictSize({
+//         min: { width: 100, height: 50 }
+//       })
+//     ],
+
+//     inertia: true
+//   })
+//   .draggable({
+//     onmove: window.dragMoveListener,
+//     inertia: true,
+//     modifiers: [
+//       interact.modifiers.restrictRect({
+//         restriction: false,
+//         endOnly: true
+//       })
+//     ]
+//   })
+//   .on('resizemove', function (event) {
+//     var target = event.target
+//     var x = (parseFloat(target.getAttribute('data-x')) || 0)
+//     var y = (parseFloat(target.getAttribute('data-y')) || 0)
+
+//     // update the element's style
+//     target.style.width = event.rect.width + 'px'
+//     target.style.height = event.rect.height + 'px'
+
+//     // translate when resizing from top or left edges
+//     x += event.deltaRect.left
+//     y += event.deltaRect.top
+
+//     target.style.webkitTransform = target.style.transform =
+//         'translate(' + x + 'px,' + y + 'px)'
+
+//     target.setAttribute('data-x', x)
+//     target.setAttribute('data-y', y)
+//     target.textContent = Math.round(event.rect.width) + '\u00D7' + Math.round(event.rect.height)
+//   })
+function draggables() {
+  const position = { x: 0, y: 0 };
+  interact(".draggable").draggable({
+    listeners: {
+      start(event) {
+        Array.from(document.querySelectorAll(".draggable")).forEach(e => {
+          e.style.zIndex = 1;
+        });
+        event.target.style.zIndex = 3;
+      },
+      move(event) {
+        position.x += event.dx;
+        position.y += event.dy;
+
+        event.target.style.transform = `translate(${position.x}px, ${position.y}px)`;
+      }
+    }
+  });
+}
+draggables();
+
+const locposition = { x: 0, y: 0 };
+interact("#localVideo").draggable({
+  listeners: {
+    start(event) {
+    },
+    move(event) {
+      locposition.x += event.dx;
+      locposition.y += event.dy;
+      event.target.style.transform = `translate(${locposition.x}px, ${locposition.y}px)`;
+    }
+  }
+});

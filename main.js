@@ -24,7 +24,6 @@ const onSuccess = () => {};
   localVideo.srcObject = stream;
   let room = await getRoom();
   room.on("data", async (data, meta) => {
-    console.log("message received", Object.keys(data));
     if (meta.id == drone.clientId || data.target != drone.clientId) return;
     let pc = await getPC(meta.id);
     if (data.sdp) {
@@ -57,11 +56,9 @@ const onSuccess = () => {};
     }
   });
   members = roomMems.slice(1);
-  console.log(members);
   for (let m of members) {
     let pc = await getPC(m.id);
     pc.onnegotiationneeded = () => {
-      console.log("creating offer");
       pc.createOffer()
         .then(desc => {
           pc.setLocalDescription(
@@ -91,22 +88,16 @@ async function getPC(id) {
   if (pc) return pc;
   pc = new RTCPeerConnection(configuration);
   while (!pc) await new Promise(r => setTimeout(r, 500));
-  // stream.getTracks().forEach(track => {
-  //   pc.addTrack(track, stream);
-  // });
-  // setTimeout(() => {
   stream.getTracks().forEach(track => {
     pc.addTrack(track, stream);
   });
-
-  // }, 10000);
+  pc.onconnectionstatechange= (...args)=>console.log("connection changed: ",...args);
   pc.onicecandidate = event => {
     if (event.candidate)
       sendMessage({ target: id, candidate: event.candidate });
   };
   pc.ontrack = async event => {
     window.remotetrack = [...(window.remotetrack || []), event];
-    console.log("ontrack");
     const stream = event.streams[0];
     if (videos.includes(stream.id)) return;
     video = document.createElement("video");
